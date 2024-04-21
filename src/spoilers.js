@@ -75,7 +75,7 @@ module.exports =  {
                 markdownIt.renderer.rules.spoiler_close = spoiler_inline_close;
                 
             },
-            // Assests such as JS or CSS that should be loaded in the rendered HTML document
+            // Assets such as JS or CSS that should be loaded in the rendered HTML document
             assets: function() {
                 return [
 
