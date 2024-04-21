@@ -10,6 +10,8 @@ module.exports =  {
 
                 markdownIt.block.ruler.after('fence', 'spoiler_block', spoiler_block, {alt: ['paragraph', 'reference', 'blockquote', 'list']});
 
+                markdownIt.block.ruler.after('fence', 'unspoiler_block', unspoiler_block, {alt: ['paragraph', 'reference', 'blockquote', 'list']});
+
                 markdownIt.inline.ruler.after('escape', 'spoiler_inline', tokenize_spoiler);
                 markdownIt.inline.ruler2.after('emphasis', 'spoiler_inline', function (state) {
                     var curr,
@@ -77,157 +79,11 @@ module.exports =  {
             assets: function() {
                 return [
 
-                    /* For some reason this fails when exporting (cannot find the css file in assets)
+                    /* For some reason this fails when exporting (cannot find the css file in assets) */
                     {
                         name: 'spoiler-style.css'
                     }
-                    */
-
-                    // Styling of spoiler blocks
-                    {
-                        inline: true,
-                        mime: 'text/css',
-                        text: `
-                        .spoiler-block {
-                            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-                                        0 10px 10px -5px rgba(0, 0, 0, 0.04);
-                            width: 100%;
-                            color: black;
-                            background: #c2c2c2;
-                            border-radius: 8px;
-                            border: 1px solid #7a7a7a;
-                            position: relative;
-                            margin-top: 1em;
-                            margin-bottom: 1em;
-                            display: grid;
-                        }
-
-                        .spoiler-block-input {
-                            display: none;
-                        }
-
-                        label.spoiler-block-title {
-                            cursor: pointer;
-                        }
-
-                        .summary-title {
-                            user-select: none;
-                            padding: 0.8em;
-                            font-family: monospace;
-                            border-radius: 8px;
-                            font-size: 18px;
-                        }
-
-                        .summary-title:hover {
-                            opacity: 0.7;
-                        }
-                        
-                        .summary-title:before {
-                            margin-right: 0.3em;
-                            font-size: 1.6em;
-                            vertical-align: text-top;
-                            content: "\u2B9E  ";
-                            display: inline-block;
-                            transform-origin: center;
-                            transition: 200ms linear;
-                        }
-
-                        @keyframes open {
-                            0% {
-                              opacity: 0;
-                            }
-                            100% {
-                              opacity: 1;
-                            }
-                        }
-
-                        #spoiler-block-body {
-                            display: none;
-                            animation: open 0.3s ease-in-out;
-                        }
-
-                        #spoiler-block-title {
-                            cursor: pointer;
-                        }
-
-                        input.spoiler-block-input:checked ~ label ~ div#spoiler-block-body {
-                            display: block;
-                        }
-
-                        input.spoiler-block-input:checked ~ label#spoiler-block-title:before {
-                            transform: rotate(90deg);
-                        }
-
-                        .summary-content {
-                            border-top: 1px solid #7a7a7a;
-                            cursor: default;
-                            padding: 1em;
-                        }
-
-                        /* Styles for exporting */
-                        @media print {
-
-                            #spoiler-block-body {
-                                display: block;
-                                animation: none;
-                            }
-
-                            .summary-title:before {
-                                content: "";
-                            }
-
-                        }
-                        `
-                    },
-
-                    // Styling of inline spoilers
-                    {
-                        inline: true,
-                        mime: 'text/css',
-                        text: `
-                        .spoiler-inline-block {
-                            display: block;
-                            max-width: max-content;
-                            max-height: max-content;
-                        }
-
-                        input.spoiler-inline {
-                            display: none;
-                        }
-
-                        input.spoiler-inline + label.spoiler-inline {
-                            cursor: pointer;
-                            background: #000;
-                            border-radius: 3px;
-                            box-shadow: 0 0 1px #ffffff;
-                            color: #000;
-                            user-select: none;
-                            overflow-wrap: anywhere;
-                            padding: 2px;
-                        }
-                        
-                        input.spoiler-inline + label.spoiler-inline > span.spoiler-inline {
-                            opacity: 0;
-                        }
-
-                        input.spoiler-inline:checked + label.spoiler-inline > span.spoiler-inline {
-                            background: #0001;
-                            color: inherit;
-                            box-shadow: none;
-                            user-select: text;
-                            opacity: 1;
-                        }
-
-                        input.spoiler-inline:checked + label.spoiler-inline {
-                            background: #0001;
-                            color: inherit;
-                            box-shadow: none;
-                            user-select: text;
-                            padding: 2px;
-                        }
-                        `
-                    }
-                ];
+				];
             },
         }
     }
@@ -300,6 +156,9 @@ function spoiler_block(state, start, end, silent) {
 
     // Input
     token = state.push('spoiler_title_input', 'input', 0);
+    
+    // The following lines allow the spoiler blocks to be either open (checked) or closed (nothing) by default
+    //token.attrs = [[ 'class', 'spoiler-block-input' ], [ 'type', 'checkbox' ], [ 'id', ranhex ], ['checked', '']];
     token.attrs = [[ 'class', 'spoiler-block-input' ], [ 'type', 'checkbox' ], [ 'id', ranhex ]];
 
     // Spoiler title - label
@@ -360,6 +219,138 @@ function spoiler_block(state, start, end, silent) {
     state.push('spoiler_block_close', 'div', -1);
 
     console.info(`spoiler : Exit from 'spoiler_block' : real exit at ${next}`);
+    return true;
+}
+
+function unspoiler_block(state, start, end, silent) {
+
+    let found = false,
+    pos = state.bMarks[start]+ state.tShift[start],
+    max = state.eMarks[start],
+    next;
+
+    var token;
+    let curLine = start;
+
+    if (pos + 2 > max)
+    { 
+	    console.info(`unspoiler : Exit from 'unspoiler_block' : no data`);
+    	return false;
+    }
+
+    // Check when it starts with ':{'
+    if (state.src.slice(pos, pos+2) !== ':{')  
+    { 
+	    console.info(`unspoiler : Exit from 'unspoiler_block' : no start token`);
+    	return false;
+    }
+    pos += 2;
+
+    // We don't accept empty card formats
+    if (state.src.slice(pos, pos+2) == '}:')
+    { 
+	    console.info(`unspoiler : Exit from 'unspoiler_block' : empty card`);
+    	return false;
+    }
+    pos += 2;
+
+    if (silent) return true;    
+
+    console.info(`unspoiler : Entry into 'unspoiler_block' : real block at ${curLine} - ${end} (${state.level})`);
+    
+    curLine++;
+    // Correct formatting of the title
+    if (state.isEmpty(curLine)) return false;
+
+    let title = curLine;
+
+    curLine++;
+    // Needs to be atleast one empty line in between for better formatting
+    if (!state.isEmpty(curLine)) return false;
+
+    curLine++;
+    // Now there needs to be atleast some content before we render the card
+    if (state.isEmpty(curLine)) return false;
+
+    // If the formatting is okay, we create new tokens
+    /*
+    1 means the tag is opening
+    0 means the tag is self-closing
+    -1 means the tag is closing
+    */
+    
+    // unspoiler block
+    token = state.push('unspoiler_block_open', 'div', 1);
+    token.attrs = [[ 'class', 'unspoiler-block']];
+
+    // We generate a random id to distinguish between events
+    let ranhex = genRanHex(8);
+
+    // Input
+    token = state.push('unspoiler_title_input', 'input', 0);
+    
+    // The following lines allow the unspoiler blocks to be either open (checked) or closed (nothing) by default
+    token.attrs = [[ 'class', 'unspoiler-block-input' ], [ 'type', 'checkbox' ], [ 'id', ranhex ], ['checked', '']];
+    //token.attrs = [[ 'class', 'unspoiler-block-input' ], [ 'type', 'checkbox' ], [ 'id', ranhex ]];
+
+    // unspoiler title - label
+    token = state.push('unspoiler_title_open', 'label', 1);
+    token.attrs = [[ 'class', 'summary-title' ], [ 'id', 'unspoiler-block-title' ], [ 'for', ranhex ]];
+
+    token = state.push('inline', '', 0);
+    token.map = [ title, title ];
+    token.content = state.getLines(title, title+1, state.tShift[title], false).trim();
+    token.children = [];
+
+    token = state.push('unspoiler_title_close', 'label', -1);
+
+    // unspoiler body - div
+    token = state.push('unspoiler_body_open', 'div', 1);
+    token.attrs = [[ 'class', 'summary-content' ], [ 'id', 'unspoiler-block-body' ]];
+
+	let bracketLevel = 1;
+    
+    // Content starts
+    for (next = curLine; !found;) {
+        next++;
+        
+        if (next >= end) {
+		    console.info(`unspoiler : Loop break in 'unspoiler_block' : at ${next} >= ${end}`);
+            break;
+        }
+        
+        pos = state.bMarks[next] + state.tShift[next];
+        max = state.eMarks[next];
+        
+        if (pos < max && state.tShift[next] < state.blkIndent) {
+            break;
+        }
+        
+        if (state.src.slice(pos, max).length == 2 && state.src.slice(pos, max).trim().slice(-2) == ':{') {
+			bracketLevel ++;
+		}
+
+        // Check if there's only '}:' on the line
+        if (state.src.slice(pos, max).length == 2 && state.src.slice(pos, max).trim().slice(-2) == '}:') {
+			if (bracketLevel == 1)
+            	found = true;
+            else
+				bracketLevel --;
+        }
+    }
+
+    // We use to render markdown within
+    state.md.block.tokenize(state, curLine, next, false);
+    
+    state.line = next + 1;
+
+    // Finalize body
+    state.push('unspoiler_body_close', 'div', -1);
+
+    // Finalize details    
+    state.push('unspoiler_block_close', 'div', -1);
+
+    console.info(`unspoiler : Exit from 'unspoiler_block' : real exit at ${next}`);
     return true;
 }
 
