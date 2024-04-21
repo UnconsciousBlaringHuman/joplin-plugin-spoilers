@@ -1,3 +1,8 @@
+/*
+background color that I hate #c2c2c2
+change the box
+*/
+
 :root {
 	--white: #ffffff;
 
@@ -65,7 +70,41 @@ details > summary::-webkit-details-marker {
   }
 }
 
+/* This item below, is pretty useless, don't change the content thing, it doesn't mean shit here, go to .spoiler-block */
+details summary:before {
+	margin-right: 1.3em;
+	font-size: 1.5em;
+	vertical-align: middle;
+  content: "\25B6";
+  display: inline-block;
+  transform-origin: center;
+  transition: 200ms linear;
+}
+
+details[open] summary ~ * {
+  animation: open 0.3s ease-in-out;
+}
+
+details[open] > summary:before {
+  	transform: rotate(90deg);
+}
+
+details {
+	font-size: 1rem;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+		0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	width: 100%;
+  color: white;
+	background: var(--dark-grey);;
+	border-radius: 8px;
+  border: 1px solid #7a7a7a;
+	position: relative;
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
 /* Styling of spoiler blocks */
+/* Edit the items below, the ones above this line are pretty useless */
 .spoiler-block {
     width: 100%;
     color: white;
@@ -113,6 +152,18 @@ label.spoiler-block-title {
     transition: 200ms linear;
 }
 
+.summary-title:after {
+    font-size: 1.5em;
+    margin-right: -1em;
+    color: red;
+    vertical-align: text-top;
+    float: right;
+    content: "\232F";
+    display: inline-block;
+    transform-origin: center;
+    transition: 200ms linear;
+}
+
 @keyframes open {
     0% {
       opacity: 0;
@@ -138,6 +189,11 @@ input.spoiler-block-input:checked ~ label ~ div#spoiler-block-body {
 input.spoiler-block-input:checked ~ label#spoiler-block-title:before {
     transform: rotate(90deg);
 }
+
+input.spoiler-block-input:checked ~ label#spoiler-block-title:after {
+    content: "\2716";
+	transform: rotate(-90deg);
+}	
 
 .summary-content {
     border-top: 1px solid var(--light-grey);
@@ -172,10 +228,10 @@ input.spoiler-inline {
 
 input.spoiler-inline + label.spoiler-inline {
     cursor: pointer;
-    background: var(--black);
+    background: #000;
     border-radius: 3px;
     box-shadow: 0 0 1px var(--white);;
-    color: var(--black);
+    color: #000;
     user-select: none;
     overflow-wrap: anywhere;
     padding: 2px;
@@ -202,6 +258,7 @@ input.spoiler-inline:checked + label.spoiler-inline {
 }
 
 /* Styling of unspoiler blocks */
+/* Edit the items below, the ones above this line are pretty useless */
 .unspoiler-block {
     width: 100%;
     color: white;
@@ -239,6 +296,11 @@ input.unspoiler-block-input:checked ~ label#unspoiler-block-title:before {
     transform: rotate(90deg);
 }
 
+input.unspoiler-block-input:checked ~ label#unspoiler-block-title:after {
+    content: "\2716";
+	transform: rotate(-90deg);
+}	
+
 /* Styles for exporting */
 @media print {
 
@@ -266,7 +328,7 @@ input.unspoiler-inline {
 
 input.unspoiler-inline + label.unspoiler-inline {
     cursor: pointer;
-    background: var(--black);
+    background: #000;
     border-radius: 3px;
     box-shadow: 0 0 1px var(--white);;
     color: var(--black);
